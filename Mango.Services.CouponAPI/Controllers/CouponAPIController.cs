@@ -1,5 +1,6 @@
 ﻿using Mango.Services.CouponAPI.Data;
 using Mango.Services.CouponAPI.Models;
+using Mango.Services.CouponAPI.Models.Dto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,43 +11,47 @@ namespace Mango.Services.CouponAPI.Controllers
     public class CouponAPIController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private ResponseDto _responseDto;
 
         public CouponAPIController(AppDbContext dbContext)
         {
             _db = dbContext;
+            _responseDto = new ResponseDto();
         }
 
         [HttpGet]
-        public object Get()
+        public ResponseDto Get()
         {
             try
             {
                 IEnumerable<Coupon> objList = _db.Coupons.ToList();
-                return objList;
+                _responseDto.Result = objList;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                _responseDto.IsSuccessful = false;
+                _responseDto.Message = ex.Message;
             }
 
-            return null;
+            return _responseDto;
         }
 
         [HttpGet]
         [Route("{id:int}")]
-        public object Get(int id)
+        public ResponseDto Get(int id)
         {
             try
             {
                 var coupon = _db.Coupons.First(u => u.CouponId == id);
-                return coupon;
+                _responseDto.Result = coupon;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-
+                _responseDto.IsSuccessful = false;
+                _responseDto.Message = ex.Message;
             }
 
-            return null;
+            return _responseDto;
         }
     }
 }
