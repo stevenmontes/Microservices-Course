@@ -23,6 +23,11 @@ namespace Mango.Web.Controllers
             {
                 couponDtos = JsonConvert.DeserializeObject<List<CouponDto>>(Convert.ToString(response.Result)!);
             }
+            else
+            {
+                TempData["error"] = response.Message;
+            }
+
             return View(couponDtos);
         }
 
@@ -37,7 +42,12 @@ namespace Mango.Web.Controllers
 
                 if (response != null && response.IsSuccessful)
                 {
+                    TempData["sucess"] = "Coupon created successfully";
                     return RedirectToAction(nameof(CouponIndex));
+                }
+                else
+                {
+                    TempData["error"] = response.Message;
                 }
             }
             return View();
@@ -52,6 +62,10 @@ namespace Mango.Web.Controllers
                 CouponDto model = JsonConvert.DeserializeObject<CouponDto>(Convert.ToString(response.Result)!);
                 return View(model);
             }
+            else
+            {
+                TempData["error"] = response.Message;
+            }
 
             return NotFound();
         }
@@ -63,10 +77,15 @@ namespace Mango.Web.Controllers
 
             if (response != null && response.IsSuccessful)
             {
+                TempData["sucess"] = "Coupon deleted successfully";
                 return RedirectToAction(nameof(CouponIndex));
             }
+            else
+            {
+                TempData["error"] = response.Message;
+            }
 
-            return NotFound();
+            return View();
         }
     }
 }
