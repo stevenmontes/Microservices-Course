@@ -25,5 +25,10 @@ namespace Mango.Web.Controllers
             }
             return View(couponDtos);
         }
+
+        public async Task<IActionResult> CouponCreate()
+        {
+            return View();
+        }
     }
 }
