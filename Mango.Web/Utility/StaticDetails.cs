@@ -5,8 +5,9 @@
         public static string CouponAPIBase { get; set; } = string.Empty;
 
         public static string AuthAPIBase { get; set;} = string.Empty;
-        public static string RoleAdmin = "ADMIN";
-        public static string RoleCustomer = "CUSTOMER";
+        public const string RoleAdmin = "ADMIN";
+        public const string RoleCustomer = "CUSTOMER";
+        public const string TokenCookie = "JWTToken";
 
         public enum ApiType
         {

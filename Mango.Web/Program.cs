@@ -16,6 +16,7 @@ ServiceUrls serviceUrls = builder.Configuration.GetSection("ServiceUrls").Get<Se
 StaticDetails.CouponAPIBase = serviceUrls.CouponAPI;
 StaticDetails.AuthAPIBase = serviceUrls.AuthAPI;
 
+builder.Services.AddScoped<ITokenProvider, TokenProvider>();
 builder.Services.AddScoped<IBaseService, BaseService>();
 builder.Services.AddScoped<ICouponService, CouponService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
