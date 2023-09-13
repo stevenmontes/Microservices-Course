@@ -80,7 +80,10 @@ namespace Mango.Web.Controllers
                     TempData["success"] = "Registration Successful";
                     return RedirectToAction(nameof(Login));
                 }
-
+            }
+            else
+            {
+                TempData["error"] = responseDto.Message;
             }
 
             var roleList = new List<SelectListItem>
