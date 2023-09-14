@@ -12,14 +12,17 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<ICouponService, CouponService>();
 builder.Services.AddHttpClient<IAuthService, AuthService>();
+builder.Services.AddHttpClient<IProductService, ProductService>();
 
 ServiceUrls serviceUrls = builder.Configuration.GetSection("ServiceUrls").Get<ServiceUrls>();
 StaticDetails.CouponAPIBase = serviceUrls.CouponAPI;
 StaticDetails.AuthAPIBase = serviceUrls.AuthAPI;
+StaticDetails.ProductAPIBase = serviceUrls.ProductAPI;
 
 builder.Services.AddScoped<ITokenProvider, TokenProvider>();
 builder.Services.AddScoped<IBaseService, BaseService>();
 builder.Services.AddScoped<ICouponService, CouponService>();
+builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
