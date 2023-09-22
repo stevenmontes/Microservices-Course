@@ -5,6 +5,7 @@ using Mango.Services.ShoppingCartAPI.Models.Dto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.PortableExecutable;
 
 namespace Mango.Services.ShoppingCartAPI.Controllers
 {
@@ -28,7 +29,9 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
-                var cartHeaderFromDb = await _appDbContext.CartHeaders.FirstOrDefaultAsync(u => u.UserId == cartDto.CartHeader.UserId);
+                var cartHeaderFromDb = await _appDbContext.CartHeaders
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.UserId == cartDto.CartHeader.UserId);
 
                 if (cartHeaderFromDb == null)
                 {
@@ -45,18 +48,31 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                 else
                 {
                     // Check if details has same product
-                    var cartDetailsFromDb = await _appDbContext.CartDetails.FirstOrDefaultAsync(
+                    var cartDetailsFromDb = await _appDbContext.CartDetails.AsNoTracking()
+                        .FirstOrDefaultAsync(
                         u => u.ProductId == cartDto.CartDetails.First().ProductId &&
                         u.CartHeaderId == cartHeaderFromDb.CartHeaderId);
 
                     if (cartDetailsFromDb == null)
                     {
                         // Create CartDetails
+                        cartDto.CartDetails.First().CartHeaderId = cartHeaderFromDb.CartHeaderId;
+                        CartDetails cartDetails = _mapper.Map<CartDetails>(cartDto.CartDetails.First());
+                        _appDbContext.CartDetails.Add(cartDetails);
+                        await _appDbContext.SaveChangesAsync();
                     }
                     else
                     {
                         // Update count in Cart Details
+                        cartDto.CartDetails.First().Count += cartDetailsFromDb.Count;
+                        cartDto.CartDetails.First().CartHeaderId = cartDetailsFromDb.CartHeaderId;
+                        cartDto.CartDetails.First().CartDetailId = cartDetailsFromDb.CartDetailId;
+                        CartDetails cartDetails = _mapper.Map<CartDetails>(cartDto.CartDetails.First());
+                        _appDbContext.CartDetails.Update(cartDetails);
+                        await _appDbContext.SaveChangesAsync();
                     }
+
+                    _responseDto.Result = cartDto;
                 }
             }
             catch (Exception ex)
