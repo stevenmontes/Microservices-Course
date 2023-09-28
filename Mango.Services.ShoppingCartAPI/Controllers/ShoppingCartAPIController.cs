@@ -16,15 +16,55 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
     {
         private ResponseDto _responseDto;
         private IMapper _mapper;
-        private readonly AppDbContext _appDbContext;
+        private readonly AppDbContext _db;
         private IProductService _productService;
 
         public ShoppingCartAPIController(AppDbContext db, IMapper mapper, IProductService productService)
         {
-            _appDbContext = db;
+            _db = db;
             _mapper = mapper;
             _responseDto = new ResponseDto();
             _productService = productService;
+        }
+
+        [HttpGet("ApplyCoupon")]
+        public async Task<ResponseDto> ApplyCoupon([FromBody] CartDto cartDto)
+        {
+            try
+            {
+                var cartFromDb = await _db.CartHeaders.FirstAsync(c => c.UserId == cartDto.CartHeader.UserId);
+                cartFromDb.CouponCode = cartDto.CartHeader.CouponCode;
+                _db.CartHeaders.Update(cartFromDb);
+                await _db.SaveChangesAsync();
+                _responseDto.Result = true;
+            }
+            catch (Exception ex)
+            {
+                _responseDto.Message = ex.Message;
+                _responseDto.IsSuccessful = false;
+            }
+
+            return _responseDto;
+        }
+
+        [HttpGet("RemoveCoupon")]
+        public async Task<ResponseDto> RemoveCoupon([FromBody] CartDto cartDto)
+        {
+            try
+            {
+                var cartFromDb = await _db.CartHeaders.FirstAsync(c => c.UserId == cartDto.CartHeader.UserId);
+                cartFromDb.CouponCode = "";
+                _db.CartHeaders.Update(cartFromDb);
+                await _db.SaveChangesAsync();
+                _responseDto.Result = true;
+            }
+            catch (Exception ex)
+            {
+                _responseDto.Message = ex.Message;
+                _responseDto.IsSuccessful = false;
+            }
+
+            return _responseDto;
         }
 
         [HttpGet("GetCart/{userId}")]
@@ -34,10 +74,10 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             {
                 CartDto cart = new()
                 {
-                    CartHeader = _mapper.Map<CartHeaderDto>(_appDbContext.CartHeaders.First(u => u.UserId == userId)),
+                    CartHeader = _mapper.Map<CartHeaderDto>(_db.CartHeaders.First(u => u.UserId == userId)),
                 };
 
-                cart.CartDetails = _mapper.Map<IEnumerable<CartDetailsDto>>(_appDbContext.CartDetails
+                cart.CartDetails = _mapper.Map<IEnumerable<CartDetailsDto>>(_db.CartDetails
                     .Where(u => u.CartHeaderId == cart.CartHeader.CartHeaderId));
 
                 var productDtos = await _productService.GetProductDtosAsync();
@@ -64,7 +104,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
-                var cartHeaderFromDb = await _appDbContext.CartHeaders
+                var cartHeaderFromDb = await _db.CartHeaders
                     .AsNoTracking()
                     .FirstOrDefaultAsync(u => u.UserId == cartDto.CartHeader.UserId);
 
@@ -72,17 +112,17 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                 {
                     // Create Header and Details
                     CartHeader cartHeader = _mapper.Map<CartHeader>(cartDto.CartHeader);
-                    _appDbContext.CartHeaders.Add(cartHeader);
-                    await _appDbContext.SaveChangesAsync();
+                    _db.CartHeaders.Add(cartHeader);
+                    await _db.SaveChangesAsync();
 
                     cartDto.CartDetails.First().CartHeaderId = cartHeader.CartHeaderId;
                     CartDetails cartDetails = _mapper.Map<CartDetails>(cartDto.CartDetails.First());
-                    _appDbContext.CartDetails.Add(cartDetails);
+                    _db.CartDetails.Add(cartDetails);
                 }
                 else
                 {
                     // Check if details has same product
-                    var cartDetailsFromDb = await _appDbContext.CartDetails.AsNoTracking()
+                    var cartDetailsFromDb = await _db.CartDetails.AsNoTracking()
                         .FirstOrDefaultAsync(
                         u => u.ProductId == cartDto.CartDetails.First().ProductId &&
                         u.CartHeaderId == cartHeaderFromDb.CartHeaderId);
@@ -92,7 +132,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                         // Create CartDetails
                         cartDto.CartDetails.First().CartHeaderId = cartHeaderFromDb.CartHeaderId;
                         CartDetails cartDetails = _mapper.Map<CartDetails>(cartDto.CartDetails.First());
-                        _appDbContext.CartDetails.Add(cartDetails);
+                        _db.CartDetails.Add(cartDetails);
                     }
                     else
                     {
@@ -101,10 +141,10 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                         cartDto.CartDetails.First().CartHeaderId = cartDetailsFromDb.CartHeaderId;
                         cartDto.CartDetails.First().CartDetailId = cartDetailsFromDb.CartDetailId;
                         CartDetails cartDetails = _mapper.Map<CartDetails>(cartDto.CartDetails.First());
-                        _appDbContext.CartDetails.Update(cartDetails);
+                        _db.CartDetails.Update(cartDetails);
                     }
 
-                    await _appDbContext.SaveChangesAsync();
+                    await _db.SaveChangesAsync();
                     _responseDto.Result = cartDto;
                 }
             }
@@ -122,19 +162,19 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         {
             try
             {
-                CartDetails cartDetails = _appDbContext.CartDetails.First(c => c.CartDetailId == cartDetailsId);
-                var totalCountCartItem = _appDbContext.CartDetails.Count(c => c.CartHeaderId == cartDetails.CartHeaderId);
-                _appDbContext.Remove(cartDetails);
+                CartDetails cartDetails = _db.CartDetails.First(c => c.CartDetailId == cartDetailsId);
+                var totalCountCartItem = _db.CartDetails.Count(c => c.CartHeaderId == cartDetails.CartHeaderId);
+                _db.Remove(cartDetails);
 
                 if (totalCountCartItem == 1)
                 {
-                    var cartHeaderToRemove = await _appDbContext.CartHeaders
+                    var cartHeaderToRemove = await _db.CartHeaders
                         .FirstOrDefaultAsync(u => u.CartHeaderId == cartDetails.CartHeaderId);
 
-                    _appDbContext.CartHeaders.Remove(cartHeaderToRemove);
+                    _db.CartHeaders.Remove(cartHeaderToRemove);
                 }
 
-                await _appDbContext.SaveChangesAsync();
+                await _db.SaveChangesAsync();
                 _responseDto.Result = true;
             }
             catch (Exception ex)
