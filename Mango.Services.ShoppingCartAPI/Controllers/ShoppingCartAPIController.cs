@@ -29,7 +29,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             _couponService = couponService;
         }
 
-        [HttpGet("ApplyCoupon")]
+        [HttpPost("ApplyCoupon")]
         public async Task<ResponseDto> ApplyCoupon([FromBody] CartDto cartDto)
         {
             try
